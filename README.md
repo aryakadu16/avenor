@@ -1,47 +1,223 @@
-# AVENOR — Intelligent communication. Effortless control.
+# raw-body
 
-## Status (read first)
-| Area | State |
-|---|---|
-| Frontend (`frontend/`) | Approved design. **Sign-in/registration/logout/session are connected to Supabase Auth** (see Authentication). Emails, charts, approvals, follow-ups, notifications and settings still use the generated demo data and are **not yet connected to the API**. |
-| Express API (`server/`) | Implemented. Unit/integration tests run **without** Supabase/OpenAI (see Tests). |
-| Database (`database/migrations/001_schema.sql`) | Written, **never executed** against a real Supabase project. |
-| Supabase Auth | Frontend + API integrated. Tested only against a **mock** Supabase, **not a real project**. |
-| OpenAI | Server calls the Chat Completions API with validated JSON output. **Never run with a real key.** |
-| Email sending | Not implemented. Approved replies are stored as `awaiting_sending_configuration`. |
-| Demo seeding, Realtime client, browser push, creator/security dashboard, ZIP of a built frontend | **Not done.** |
+[![NPM Version][npm-image]][npm-url]
+[![NPM Downloads][downloads-image]][downloads-url]
+[![Node.js Version][node-version-image]][node-version-url]
+[![Build status][github-actions-ci-image]][github-actions-ci-url]
+[![Test coverage][coveralls-image]][coveralls-url]
 
-## Setup
-1. Create a Supabase project. Run `database/migrations/001_schema.sql` in the SQL editor.
-2. `cd server && cp .env.example .env` and fill `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `ALLOWED_ORIGINS`, optionally `OPENAI_API_KEY`.
-3. `npm install && npm start` (Node 18+). Check `GET /api/health`.
-4. `npm test` runs the offline tests.
-Never commit `.env`. The service-role key is not needed by the API; keep it out of the browser.
+Gets the entire buffer of a stream either as a `Buffer` or a string.
+Validates the stream's length against an expected length and maximum limit.
+Ideal for parsing request bodies.
 
-## Security design
-- Every request except `/api/health` needs `Authorization: Bearer <Supabase JWT>`, verified with Supabase Auth.
-- Queries use a per-request client carrying the user's JWT, so Postgres RLS enforces ownership (policies `*_own`; linked rows must reference the same user's email).
-- zod validation on all inputs, strict schemas, 100 kB body limit, Helmet, CORS allow-list, global and AI rate limits, no headers/body/query in logs, generic 500 errors.
-- Cross-user isolation is **designed via RLS but not verified against a live database.**
+## Install
 
-## API (all JSON, `{data}` or `{error:{message,code,details}}`)
-`GET /api/health` · `GET|PATCH /api/me` · `GET /api/emails?q&category&priority&unread&status&sort&limit&offset` · `GET|PATCH|DELETE /api/emails/:id` · `POST /api/emails/:id/process` (OpenAI; cached in `ai_processing`) · `GET /api/approvals` · `POST /api/approvals/:id/decision {decision,reply?}` · `GET|POST /api/follow-ups` · `PATCH|DELETE /api/follow-ups/:id` · `GET /api/notifications` · `POST /api/notifications/read-all` · `POST /api/notifications/:id/read` · `GET /api/activity` · `GET|PUT /api/settings` · `GET /api/analytics/summary`.
-Errors: 400 validation, 401 auth, 404, 409 already decided, 429 rate limit, 502/503/504 AI or auth service problems.
+This is a [Node.js](https://nodejs.org/en/) module available through the
+[npm registry](https://www.npmjs.com/). Installation is done using the
+[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
 
-## Tests (run, offline)
-`server/tests/api.test.js`: health flags, 401 on all protected routes, bad auth header, 503 when auth service unreachable, CORS allow/deny, security headers, 404, oversized body.
+```sh
+$ npm install raw-body
+```
 
-## Authentication (frontend)
-Files: `frontend/auth.js` (Supabase client, validation, error mapping, token-bearing `AV.api()`), `frontend/config.js` (public config), `frontend/vendor/supabase.js` (supabase-js UMD, vendored).
-1. In Supabase: Authentication -> Providers -> Email enabled. Decide whether "Confirm email" is on (if on, new users must confirm before signing in; the app tells them so). Add your frontend URL under Authentication -> URL Configuration.
-2. Edit `frontend/config.js`: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (public anon key only), `API_URL`.
-3. Backend `server/.env`: same `SUPABASE_URL`/`SUPABASE_ANON_KEY`; `ALLOWED_ORIGINS` must contain the exact frontend origin.
-4. Serve the frontend over http (not `file://`): `npx serve frontend -l 5173`, then start the API (`cd server && npm start`).
-Behaviour: sign-up, sign-in, logout, session restored after refresh, protected `#app-*` routes redirect to `#start`, signed-in users skip `#start`, backend 401 signs the user out, 403/503/network errors show clear messages. If config is missing the forms say so; demo mode still works. Signed-in users currently see **generated sample data**; their mailbox is not connected.
-Limitations: the password-reset email can be requested, but a screen to set the new password is not built. Google sign-in is not offered.
+### TypeScript
 
-## Auth tests
-- `cd server && npm test` (13 tests incl. backend token checks against a mock Supabase)
-- `node --test frontend/tests/auth.test.js` (7 unit tests)
-- `pip install playwright && playwright install chromium && python3 tests/e2e/e2e_auth.py` (11 browser tests; mock Supabase + real API + real frontend)
-All three use a **mock** Supabase. Real Supabase has not been tested.
+This module includes a [TypeScript](https://www.typescriptlang.org/)
+declaration file to enable auto complete in compatible editors and type
+information for TypeScript projects. This module depends on the Node.js
+types, so install `@types/node`:
+
+```sh
+$ npm install @types/node
+```
+
+## API
+
+```js
+var getRawBody = require('raw-body')
+```
+
+### getRawBody(stream, [options], [callback])
+
+**Returns a promise if no callback specified and global `Promise` exists.**
+
+Options:
+
+- `length` - The length of the stream.
+  If the contents of the stream do not add up to this length,
+  an `400` error code is returned.
+- `limit` - The byte limit of the body.
+  This is the number of bytes or any string format supported by
+  [bytes](https://www.npmjs.com/package/bytes),
+  for example `1000`, `'500kb'` or `'3mb'`.
+  If the body ends up being larger than this limit,
+  a `413` error code is returned.
+- `encoding` - The encoding to use to decode the body into a string.
+  By default, a `Buffer` instance will be returned when no encoding is specified.
+  Most likely, you want `utf-8`, so setting `encoding` to `true` will decode as `utf-8`.
+  You can use any type of encoding supported by [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme).
+
+You can also pass a string in place of options to just specify the encoding.
+
+If an error occurs, the stream will be paused, everything unpiped,
+and you are responsible for correctly disposing the stream.
+For HTTP requests, you may need to finish consuming the stream if
+you want to keep the socket open for future requests. For streams
+that use file descriptors, you should `stream.destroy()` or
+`stream.close()` to prevent leaks.
+
+## Errors
+
+This module creates errors depending on the error condition during reading.
+The error may be an error from the underlying Node.js implementation, but is
+otherwise an error created by this module, which has the following attributes:
+
+  * `limit` - the limit in bytes
+  * `length` and `expected` - the expected length of the stream
+  * `received` - the received bytes
+  * `encoding` - the invalid encoding
+  * `status` and `statusCode` - the corresponding status code for the error
+  * `type` - the error type
+
+### Types
+
+The errors from this module have a `type` property which allows for the programmatic
+determination of the type of error returned.
+
+#### encoding.unsupported
+
+This error will occur when the `encoding` option is specified, but the value does
+not map to an encoding supported by the [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme)
+module.
+
+#### entity.too.large
+
+This error will occur when the `limit` option is specified, but the stream has
+an entity that is larger.
+
+#### request.aborted
+
+This error will occur when the request stream is aborted by the client before
+reading the body has finished.
+
+#### request.size.invalid
+
+This error will occur when the `length` option is specified, but the stream has
+emitted more bytes.
+
+#### stream.encoding.set
+
+This error will occur when the given stream has an encoding set on it, making it
+a decoded stream. The stream should not have an encoding set and is expected to
+emit `Buffer` objects.
+
+#### stream.not.readable
+
+This error will occur when the given stream is not readable.
+
+## Examples
+
+### Simple Express example
+
+```js
+var contentType = require('content-type')
+var express = require('express')
+var getRawBody = require('raw-body')
+
+var app = express()
+
+app.use(function (req, res, next) {
+  getRawBody(req, {
+    length: req.headers['content-length'],
+    limit: '1mb',
+    encoding: contentType.parse(req).parameters.charset
+  }, function (err, string) {
+    if (err) return next(err)
+    req.text = string
+    next()
+  })
+})
+
+// now access req.text
+```
+
+### Simple Koa example
+
+```js
+var contentType = require('content-type')
+var getRawBody = require('raw-body')
+var koa = require('koa')
+
+var app = koa()
+
+app.use(function * (next) {
+  this.text = yield getRawBody(this.req, {
+    length: this.req.headers['content-length'],
+    limit: '1mb',
+    encoding: contentType.parse(this.req).parameters.charset
+  })
+  yield next
+})
+
+// now access this.text
+```
+
+### Using as a promise
+
+To use this library as a promise, simply omit the `callback` and a promise is
+returned, provided that a global `Promise` is defined.
+
+```js
+var getRawBody = require('raw-body')
+var http = require('http')
+
+var server = http.createServer(function (req, res) {
+  getRawBody(req)
+    .then(function (buf) {
+      res.statusCode = 200
+      res.end(buf.length + ' bytes submitted')
+    })
+    .catch(function (err) {
+      res.statusCode = 500
+      res.end(err.message)
+    })
+})
+
+server.listen(3000)
+```
+
+### Using with TypeScript
+
+```ts
+import * as getRawBody from 'raw-body';
+import * as http from 'http';
+
+const server = http.createServer((req, res) => {
+  getRawBody(req)
+  .then((buf) => {
+    res.statusCode = 200;
+    res.end(buf.length + ' bytes submitted');
+  })
+  .catch((err) => {
+    res.statusCode = err.statusCode;
+    res.end(err.message);
+  });
+});
+
+server.listen(3000);
+```
+
+## License
+
+[MIT](LICENSE)
+
+[npm-image]: https://img.shields.io/npm/v/raw-body.svg
+[npm-url]: https://npmjs.org/package/raw-body
+[node-version-image]: https://img.shields.io/node/v/raw-body.svg
+[node-version-url]: https://nodejs.org/en/download/
+[coveralls-image]: https://img.shields.io/coveralls/stream-utils/raw-body/master.svg
+[coveralls-url]: https://coveralls.io/r/stream-utils/raw-body?branch=master
+[downloads-image]: https://img.shields.io/npm/dm/raw-body.svg
+[downloads-url]: https://npmjs.org/package/raw-body
+[github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/stream-utils/raw-body/ci.yml?branch=master&label=ci
+[github-actions-ci-url]: https://github.com/jshttp/stream-utils/raw-body?query=workflow%3Aci
