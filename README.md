@@ -1,223 +1,208 @@
-# raw-body
+<p align="center">
+  <img src="logo.svg" width="200px" align="center" alt="Zod logo" />
+  <h1 align="center">Zod</h1>
+  <p align="center">
+    TypeScript-first schema validation with static type inference
+    <br/>
+    by <a href="https://x.com/colinhacks">@colinhacks</a>
+  </p>
+</p>
+<br/>
 
-[![NPM Version][npm-image]][npm-url]
-[![NPM Downloads][downloads-image]][downloads-url]
-[![Node.js Version][node-version-image]][node-version-url]
-[![Build status][github-actions-ci-image]][github-actions-ci-url]
-[![Test coverage][coveralls-image]][coveralls-url]
+<p align="center">
+<a href="https://github.com/colinhacks/zod/actions?query=branch%3Amaster"><img src="https://github.com/colinhacks/zod/actions/workflows/test.yml/badge.svg?event=push&branch=master" alt="Zod CI status" /></a>
+<a href="https://opensource.org/licenses/MIT" rel="nofollow"><img src="https://img.shields.io/github/license/colinhacks/zod" alt="License"></a>
+<a href="https://www.npmjs.com/package/zod" rel="nofollow"><img src="https://img.shields.io/npm/dw/zod.svg" alt="npm"></a>
+<a href="https://discord.gg/KaSRdyX2vc" rel="nofollow"><img src="https://img.shields.io/discord/893487829802418277?label=Discord&logo=discord&logoColor=white" alt="discord server"></a>
+<a href="https://github.com/colinhacks/zod" rel="nofollow"><img src="https://img.shields.io/github/stars/colinhacks/zod" alt="stars"></a>
+</p>
 
-Gets the entire buffer of a stream either as a `Buffer` or a string.
-Validates the stream's length against an expected length and maximum limit.
-Ideal for parsing request bodies.
+<div align="center">
+  <a href="https://zod.dev/api">Docs</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://discord.gg/RcG33DQJdf">Discord</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://twitter.com/colinhacks">𝕏</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://bsky.app/profile/zod.dev">Bluesky</a>
+  <br />
+</div>
 
-## Install
+<br/>
+<br/>
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/). Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+<h2 align="center">Featured sponsor: Jazz</h2>
 
-```sh
-$ npm install raw-body
-```
+<div align="center">
+  <a href="https://jazz.tools/?utm_source=zod">
+    <picture width="85%" >
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/garden-co/jazz/938f6767e46cdfded60e50d99bf3b533f4809c68/homepage/homepage/public/Zod%20sponsor%20message.png">
+      <img alt="jazz logo" src="https://raw.githubusercontent.com/garden-co/jazz/938f6767e46cdfded60e50d99bf3b533f4809c68/homepage/homepage/public/Zod%20sponsor%20message.png" width="85%">
+    </picture>
+  </a>
+  <br/>
+  <p><sub>Learn more about <a target="_blank" rel="noopener noreferrer" href="mailto:sponsorship@colinhacks.com">featured sponsorships</a></sub></p>
+</div>
 
-### TypeScript
+<br/>
+<br/>
+<br/>
 
-This module includes a [TypeScript](https://www.typescriptlang.org/)
-declaration file to enable auto complete in compatible editors and type
-information for TypeScript projects. This module depends on the Node.js
-types, so install `@types/node`:
+### [Read the docs →](https://zod.dev/api)
 
-```sh
-$ npm install @types/node
-```
+<br/>
+<br/>
 
-## API
+## What is Zod?
 
-```js
-var getRawBody = require('raw-body')
-```
-
-### getRawBody(stream, [options], [callback])
-
-**Returns a promise if no callback specified and global `Promise` exists.**
-
-Options:
-
-- `length` - The length of the stream.
-  If the contents of the stream do not add up to this length,
-  an `400` error code is returned.
-- `limit` - The byte limit of the body.
-  This is the number of bytes or any string format supported by
-  [bytes](https://www.npmjs.com/package/bytes),
-  for example `1000`, `'500kb'` or `'3mb'`.
-  If the body ends up being larger than this limit,
-  a `413` error code is returned.
-- `encoding` - The encoding to use to decode the body into a string.
-  By default, a `Buffer` instance will be returned when no encoding is specified.
-  Most likely, you want `utf-8`, so setting `encoding` to `true` will decode as `utf-8`.
-  You can use any type of encoding supported by [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme).
-
-You can also pass a string in place of options to just specify the encoding.
-
-If an error occurs, the stream will be paused, everything unpiped,
-and you are responsible for correctly disposing the stream.
-For HTTP requests, you may need to finish consuming the stream if
-you want to keep the socket open for future requests. For streams
-that use file descriptors, you should `stream.destroy()` or
-`stream.close()` to prevent leaks.
-
-## Errors
-
-This module creates errors depending on the error condition during reading.
-The error may be an error from the underlying Node.js implementation, but is
-otherwise an error created by this module, which has the following attributes:
-
-  * `limit` - the limit in bytes
-  * `length` and `expected` - the expected length of the stream
-  * `received` - the received bytes
-  * `encoding` - the invalid encoding
-  * `status` and `statusCode` - the corresponding status code for the error
-  * `type` - the error type
-
-### Types
-
-The errors from this module have a `type` property which allows for the programmatic
-determination of the type of error returned.
-
-#### encoding.unsupported
-
-This error will occur when the `encoding` option is specified, but the value does
-not map to an encoding supported by the [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme)
-module.
-
-#### entity.too.large
-
-This error will occur when the `limit` option is specified, but the stream has
-an entity that is larger.
-
-#### request.aborted
-
-This error will occur when the request stream is aborted by the client before
-reading the body has finished.
-
-#### request.size.invalid
-
-This error will occur when the `length` option is specified, but the stream has
-emitted more bytes.
-
-#### stream.encoding.set
-
-This error will occur when the given stream has an encoding set on it, making it
-a decoded stream. The stream should not have an encoding set and is expected to
-emit `Buffer` objects.
-
-#### stream.not.readable
-
-This error will occur when the given stream is not readable.
-
-## Examples
-
-### Simple Express example
-
-```js
-var contentType = require('content-type')
-var express = require('express')
-var getRawBody = require('raw-body')
-
-var app = express()
-
-app.use(function (req, res, next) {
-  getRawBody(req, {
-    length: req.headers['content-length'],
-    limit: '1mb',
-    encoding: contentType.parse(req).parameters.charset
-  }, function (err, string) {
-    if (err) return next(err)
-    req.text = string
-    next()
-  })
-})
-
-// now access req.text
-```
-
-### Simple Koa example
-
-```js
-var contentType = require('content-type')
-var getRawBody = require('raw-body')
-var koa = require('koa')
-
-var app = koa()
-
-app.use(function * (next) {
-  this.text = yield getRawBody(this.req, {
-    length: this.req.headers['content-length'],
-    limit: '1mb',
-    encoding: contentType.parse(this.req).parameters.charset
-  })
-  yield next
-})
-
-// now access this.text
-```
-
-### Using as a promise
-
-To use this library as a promise, simply omit the `callback` and a promise is
-returned, provided that a global `Promise` is defined.
-
-```js
-var getRawBody = require('raw-body')
-var http = require('http')
-
-var server = http.createServer(function (req, res) {
-  getRawBody(req)
-    .then(function (buf) {
-      res.statusCode = 200
-      res.end(buf.length + ' bytes submitted')
-    })
-    .catch(function (err) {
-      res.statusCode = 500
-      res.end(err.message)
-    })
-})
-
-server.listen(3000)
-```
-
-### Using with TypeScript
+Zod is a TypeScript-first validation library. Define a schema and parse some data with it. You'll get back a strongly typed, validated result.
 
 ```ts
-import * as getRawBody from 'raw-body';
-import * as http from 'http';
+import * as z from "zod/v4";
 
-const server = http.createServer((req, res) => {
-  getRawBody(req)
-  .then((buf) => {
-    res.statusCode = 200;
-    res.end(buf.length + ' bytes submitted');
-  })
-  .catch((err) => {
-    res.statusCode = err.statusCode;
-    res.end(err.message);
-  });
+const User = z.object({
+  name: z.string(),
 });
 
-server.listen(3000);
+// some untrusted data...
+const input = {
+  /* stuff */
+};
+
+// the parsed result is validated and type safe!
+const data = User.parse(input);
+
+// so you can use it with confidence :)
+console.log(data.name);
 ```
 
-## License
+<br/>
 
-[MIT](LICENSE)
+## Features
 
-[npm-image]: https://img.shields.io/npm/v/raw-body.svg
-[npm-url]: https://npmjs.org/package/raw-body
-[node-version-image]: https://img.shields.io/node/v/raw-body.svg
-[node-version-url]: https://nodejs.org/en/download/
-[coveralls-image]: https://img.shields.io/coveralls/stream-utils/raw-body/master.svg
-[coveralls-url]: https://coveralls.io/r/stream-utils/raw-body?branch=master
-[downloads-image]: https://img.shields.io/npm/dm/raw-body.svg
-[downloads-url]: https://npmjs.org/package/raw-body
-[github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/stream-utils/raw-body/ci.yml?branch=master&label=ci
-[github-actions-ci-url]: https://github.com/jshttp/stream-utils/raw-body?query=workflow%3Aci
+- Zero external dependencies
+- Works in Node.js and all modern browsers
+- Tiny: `2kb` core bundle (gzipped)
+- Immutable API: methods return a new instance
+- Concise interface
+- Works with TypeScript and plain JS
+- Built-in JSON Schema conversion
+- Extensive ecosystem
+
+<br/>
+
+## Installation
+
+```sh
+npm install zod
+```
+
+<br/>
+
+## Basic usage
+
+Before you can do anything else, you need to define a schema. For the purposes of this guide, we'll use a simple object schema.
+
+```ts
+import * as z from "zod/v4";
+
+const Player = z.object({
+  username: z.string(),
+  xp: z.number(),
+});
+```
+
+### Parsing data
+
+Given any Zod schema, use `.parse` to validate an input. If it's valid, Zod returns a strongly-typed _deep clone_ of the input.
+
+```ts
+Player.parse({ username: "billie", xp: 100 });
+// => returns { username: "billie", xp: 100 }
+```
+
+**Note** — If your schema uses certain asynchronous APIs like `async` [refinements](#refine) or [transforms](#transform), you'll need to use the `.parseAsync()` method instead.
+
+```ts
+const schema = z.string().refine(async (val) => val.length <= 8);
+
+await schema.parseAsync("hello");
+// => "hello"
+```
+
+### Handling errors
+
+When validation fails, the `.parse()` method will throw a `ZodError` instance with granular information about the validation issues.
+
+```ts
+try {
+  Player.parse({ username: 42, xp: "100" });
+} catch (err) {
+  if (err instanceof z.ZodError) {
+    err.issues;
+    /* [
+      {
+        expected: 'string',
+        code: 'invalid_type',
+        path: [ 'username' ],
+        message: 'Invalid input: expected string'
+      },
+      {
+        expected: 'number',
+        code: 'invalid_type',
+        path: [ 'xp' ],
+        message: 'Invalid input: expected number'
+      }
+    ] */
+  }
+}
+```
+
+To avoid a `try/catch` block, you can use the `.safeParse()` method to get back a plain result object containing either the successfully parsed data or a `ZodError`. The result type is a [discriminated union](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions), so you can handle both cases conveniently.
+
+```ts
+const result = Player.safeParse({ username: 42, xp: "100" });
+if (!result.success) {
+  result.error; // ZodError instance
+} else {
+  result.data; // { username: string; xp: number }
+}
+```
+
+**Note** — If your schema uses certain asynchronous APIs like `async` [refinements](#refine) or [transforms](#transform), you'll need to use the `.safeParseAsync()` method instead.
+
+```ts
+const schema = z.string().refine(async (val) => val.length <= 8);
+
+await schema.safeParseAsync("hello");
+// => { success: true; data: "hello" }
+```
+
+### Inferring types
+
+Zod infers a static type from your schema definitions. You can extract this type with the `z.infer<>` utility and use it however you like.
+
+```ts
+const Player = z.object({
+  username: z.string(),
+  xp: z.number(),
+});
+
+// extract the inferred type
+type Player = z.infer<typeof Player>;
+
+// use it in your code
+const player: Player = { username: "billie", xp: 100 };
+```
+
+In some cases, the input & output types of a schema can diverge. For instance, the `.transform()` API can convert the input from one type to another. In these cases, you can extract the input and output types independently:
+
+```ts
+const mySchema = z.string().transform((val) => val.length);
+
+type MySchemaIn = z.input<typeof mySchema>;
+// => string
+
+type MySchemaOut = z.output<typeof mySchema>; // equivalent to z.infer<typeof mySchema>
+// number
+```
